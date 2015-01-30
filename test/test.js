@@ -2,6 +2,7 @@
 var assert = require('assert');
 var t = require('tcomb');
 var toType = require('../index');
+var Int = require('../subtypes').Int;
 
 var Str = t.Str;
 var Num = t.Num;
@@ -145,6 +146,66 @@ describe('toType', function () {
 
   });
 
+
+  describe('integer schema', function () {
+
+    it('should translate a simple schema', function () {
+      eq(toType({type: 'integer'}), Int);
+    });
+
+    it('should handle minimum', function () {
+      var Type = toType({
+        type: 'integer',
+        minimum: 2
+      });
+      eq(getKind(Type), 'subtype');
+      eq(Type.meta.type, Int);
+      eq(Type.meta.predicate(1), false);
+      eq(Type.meta.predicate(2), true);
+      eq(Type.meta.predicate(3), true);
+    });
+
+    it('should handle exclusiveMinimum', function () {
+      var Type = toType({
+        type: 'integer',
+        minimum: 2,
+        exclusiveMinimum: true
+      });
+      eq(getKind(Type), 'subtype');
+      eq(Type.meta.type, Int);
+      eq(Type.meta.predicate(1), false);
+      eq(Type.meta.predicate(2), false);
+      eq(Type.meta.predicate(3), true);
+    });
+
+    it('should handle maximum', function () {
+      var Type = toType({
+        type: 'integer',
+        maximum: 2
+      });
+      eq(getKind(Type), 'subtype');
+      eq(Type.meta.type, Int);
+      eq(Type.meta.predicate(1), true);
+      eq(Type.meta.predicate(2), true);
+      eq(Type.meta.predicate(3), false);
+    });
+
+    it('should handle exclusiveMaximum', function () {
+      var Type = toType({
+        type: 'integer',
+        maximum: 2,
+        exclusiveMaximum: true
+      });
+      eq(getKind(Type), 'subtype');
+      eq(Type.meta.type, Int);
+      eq(Type.meta.predicate(1), true);
+      eq(Type.meta.predicate(2), false);
+      eq(Type.meta.predicate(3), false);
+    });
+  });
+
+
+
   it('should translate a null schema', function () {
     var Type = toType({type: 'null'});
     ok(Type.is(null));
@@ -167,15 +228,19 @@ describe('toType', function () {
         type: 'object',
         properties: {
           a: {type: 'string'},
-          b: {type: 'number'}
+          b: {type: 'number'},
+          c: {type: 'integer'}
         }
       });
       var a = Type.meta.props.a;
       var b = Type.meta.props.b;
+      var c = Type.meta.props.c;
       eq(getKind(a), 'maybe');
       ok(a.meta.type === Str);
       eq(getKind(b), 'maybe');
       ok(b.meta.type === Num);
+      eq(getKind(c), 'maybe');
+      ok(c.meta.type === Int);
     });
 
     it('should handle required properties', function () {

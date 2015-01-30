@@ -1,5 +1,8 @@
+'use strict';
+
 var t = require('tcomb');
 var fcomb = require('fcomb');
+var Int = require('./subtypes').Int;
 
 var Str = t.Str;
 var Num = t.Num;
@@ -9,7 +12,9 @@ var Arr = t.Arr;
 var subtype = t.subtype;
 var enums = t.enums;
 
-var SchemaType = enums.of('null string number boolean object array', 'SchemaType');
+var SchemaType = enums.of(
+  'null string number boolean object array integer', 'SchemaType'
+);
 
 function and(f, g) {
   return f ? fcomb.and(f, g) : g;
@@ -54,6 +59,21 @@ var types = {
       predicate = and(predicate, isInteger);
     }
     return predicate ? subtype(Num, predicate) : Num;
+  },
+
+  integer: function (s) {
+    var predicate;
+    if (s.hasOwnProperty('minimum')) {
+      predicate = s.exclusiveMinimum ?
+        and(predicate, fcomb.gt(s.minimum)) :
+        and(predicate, fcomb.gte(s.minimum));
+    }
+    if (s.hasOwnProperty('maximum')) {
+      predicate = s.exclusiveMaximum ?
+        and(predicate, fcomb.lt(s.maximum)) :
+        and(predicate, fcomb.lte(s.maximum));
+    }
+    return predicate ? subtype(Int, predicate) : Int;
   },
 
   boolean: function (s) {
